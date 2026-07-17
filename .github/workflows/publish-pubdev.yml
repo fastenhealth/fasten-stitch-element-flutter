@@ -1,0 +1,26 @@
+name: Publish to pub.dev
+
+# NOTE: https://dart.dev/tools/pub/automated-publishing
+#  Pub.dev only allows automated publishing from GitHub Actions when the workflow is triggered by pushing a git tag to
+# GitHub. Pub.dev rejects publishing from GitHub Actions triggered without a tag. This ensures that new versions cannot
+# be published by events that should never trigger publishing.
+
+on:
+  push:
+    tags:
+      # must align with the tag-pattern configured on pub.dev, often just replace
+      # {{version}} with [0-9]+.[0-9]+.[0-9]+
+      - 'v[0-9]+.[0-9]+.[0-9]+' # tag-pattern on pub.dev: 'v{{version}}'
+    # If you prefer tags like '1.2.3', without the 'v' prefix, then use:
+    # - '[0-9]+.[0-9]+.[0-9]+' # tag-pattern on pub.dev: '{{version}}'
+    # If your repository contains multiple packages consider a pattern like:
+    # - 'my_package_name-v[0-9]+.[0-9]+.[0-9]+'
+
+# Publish using the reusable workflow from dart-lang.
+jobs:
+  publish-pubdev:
+    permissions:
+      id-token: write # Required for authentication using OIDC
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    # with:
+    #   working-directory: path/to/package/within/repository

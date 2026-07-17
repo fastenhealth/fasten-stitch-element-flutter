@@ -1,4 +1,8 @@
 name: Publish package
+# NOTE: https://dart.dev/tools/pub/automated-publishing
+#  Pub.dev only allows automated publishing from GitHub Actions when the workflow is triggered by pushing a git tag to
+# GitHub. Pub.dev rejects publishing from GitHub Actions triggered without a tag. This ensures that new versions cannot
+# be published by events that should never trigger publishing.
 
 on:
   #  push:
@@ -70,10 +74,6 @@ jobs:
         run: |
           git push origin HEAD:${{ github.ref_name }}
           git push origin --tags
-
-      - name: Publish to pub.dev
-        timeout-minutes: 5 # The job will fail if it takes longer than 5 minutes -- can get stuck on OIDC auth sometimes
-        run: dart pub publish --force
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
