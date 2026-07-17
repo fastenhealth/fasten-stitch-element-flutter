@@ -1,0 +1,78 @@
+name: Publish package
+
+on:
+  #  push:
+  #    tags:
+  #      - 'v*'
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump type"
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  id-token: write # Required for OIDC authentication
+  contents: write # Allows the workflow to read repository contents
+concurrency:
+  group: flutter-release
+  cancel-in-progress: false
+
+# see: https://gist.github.com/jaywcjlove/a178278521a6f72c74525d3f1d9c4bf9
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version-file: pubspec.yaml # path to pubspec.yaml or .fvmrc or .fvm/fvm_config.json
+          # Use internal caching for faster execution times
+          cache: true
+
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Run Dart Analyzer
+        run: flutter analyze
+
+      - name: Bump version (commit + tag)
+        id: bump
+        run: |
+          dart pub bump "${{ inputs.bump }}"
+          echo "version=$(awk '/^version:/ {print $2}' pubspec.yaml)" >> "$GITHUB_OUTPUT"
+          echo "tag=v$(awk '/^version:/ {print $2}' pubspec.yaml)" >> "$GITHUB_OUTPUT"
+
+      - name: Build & Run Package Tests
+        run: flutter test
+
+      - name: Push commit and tag
+        run: |
+          git push origin HEAD:${{ github.ref_name }}
+          git push origin --tags
+
+      - name: Publish to npm
+        run: dart pub publish --force
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.bump.outputs.tag }}
+          name: ${{ steps.bump.outputs.tag }}
+          generate_release_notes: true
