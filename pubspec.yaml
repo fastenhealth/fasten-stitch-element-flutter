@@ -1,6 +1,6 @@
 name: fasten_stitch_element_flutter
 description: A Flutter SDK for embedding the Fasten Connect Stitch experience in native apps.
-version: 1.0.0
+version: 1.0.1
 homepage: https://github.com/fastenhealth/fasten-stitch-element-flutter
 repository: https://github.com/fastenhealth/fasten-stitch-element-flutter
 issue_tracker: https://github.com/fastenhealth/fasten-stitch-element-flutter/issues
