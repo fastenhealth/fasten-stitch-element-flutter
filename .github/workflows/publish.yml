@@ -51,12 +51,17 @@ jobs:
       - name: Run Dart Analyzer
         run: flutter analyze
 
-      - name: Bump version (commit + tag)
+      - name: Bump version
         id: bump
         run: |
           dart pub bump "${{ inputs.bump }}"
           echo "version=$(awk '/^version:/ {print $2}' pubspec.yaml)" >> "$GITHUB_OUTPUT"
           echo "tag=v$(awk '/^version:/ {print $2}' pubspec.yaml)" >> "$GITHUB_OUTPUT"
+      - name: Commit version bump
+        run: |
+          git add pubspec.yaml
+          git commit -m "chore(release): ${{ steps.bump.outputs.version }} [skip ci]"
+          git tag ${{ steps.bump.outputs.tag }}
 
       - name: Build & Run Package Tests
         run: flutter test
@@ -66,7 +71,7 @@ jobs:
           git push origin HEAD:${{ github.ref_name }}
           git push origin --tags
 
-      - name: Publish to npm
+      - name: Publish to pub.dev
         run: dart pub publish --force
 
       - name: Create GitHub Release
