@@ -64,8 +64,8 @@ jobs:
       - name: Commit version bump
         run: |
           git add pubspec.yaml
-          git commit -m "chore(release): v${{ steps.bump.outputs.version }} [skip ci]"
-          git tag v${{ steps.bump.outputs.tag }}
+          git commit -m "chore(release): ${{ steps.bump.outputs.version }} [skip ci]"
+          git tag ${{ steps.bump.outputs.tag }}
 
       - name: Build & Run Package Tests
         run: flutter test
