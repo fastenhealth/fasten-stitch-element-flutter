@@ -66,31 +66,33 @@ class _FastenStitchElementState extends State<FastenStitchElement> {
 
   @override
   Widget build(BuildContext context) {
-    return InAppWebView(
-      initialUrlRequest: URLRequest(url: WebUri(_buildEmbedUrl())),
-      initialSettings: _createWebViewSettings(widget.debugModeEnabled),
-      initialUserScripts: _bridgeScripts,
-      onWebViewCreated: _registerJavaScriptBridge,
-      onCreateWindow: (controller, createWindowAction) async {
-        unawaited(
-          _openModal(
-            windowId: createWindowAction.windowId,
-            url: createWindowAction.request.url?.toString(),
-          ),
-        );
-        return true;
-      },
-      onReceivedError: (controller, request, error) {
-        debugPrint(
-          '[FastenStitchElement PrimaryWebView] ${request.url}: '
-          '${error.description}',
-        );
-      },
-      onConsoleMessage: (controller, consoleMessage) {
-        if (widget.debugModeEnabled) {
-          debugPrint('[FastenStitchElement PrimaryWebView] $consoleMessage');
-        }
-      },
+    return _KeyboardAvoidingViewport(
+      child: InAppWebView(
+        initialUrlRequest: URLRequest(url: WebUri(_buildEmbedUrl())),
+        initialSettings: _createWebViewSettings(widget.debugModeEnabled),
+        initialUserScripts: _bridgeScripts,
+        onWebViewCreated: _registerJavaScriptBridge,
+        onCreateWindow: (controller, createWindowAction) async {
+          unawaited(
+            _openModal(
+              windowId: createWindowAction.windowId,
+              url: createWindowAction.request.url?.toString(),
+            ),
+          );
+          return true;
+        },
+        onReceivedError: (controller, request, error) {
+          debugPrint(
+            '[FastenStitchElement PrimaryWebView] ${request.url}: '
+            '${error.description}',
+          );
+        },
+        onConsoleMessage: (controller, consoleMessage) {
+          if (widget.debugModeEnabled) {
+            debugPrint('[FastenStitchElement PrimaryWebView] $consoleMessage');
+          }
+        },
+      ),
     );
   }
 
@@ -225,6 +227,24 @@ class _FastenStitchElementState extends State<FastenStitchElement> {
   }
 }
 
+class _KeyboardAvoidingViewport extends StatelessWidget {
+  const _KeyboardAvoidingViewport({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    // The WebView owns its scroll view, so give it a keyboard-sized viewport
+    // instead of wrapping the platform view in another scrollable.
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: child,
+    );
+  }
+}
+
 class _FastenStitchModalWebView extends StatelessWidget {
   const _FastenStitchModalWebView({
     required this.debugModeEnabled,
@@ -283,7 +303,8 @@ class _FastenStitchModalWebView extends StatelessWidget {
               },
               onConsoleMessage: (controller, consoleMessage) {
                 if (debugModeEnabled) {
-                  debugPrint('[FastenStitchElement ModalWebView] $consoleMessage');
+                  debugPrint(
+                      '[FastenStitchElement ModalWebView] $consoleMessage');
                 }
               },
             ),
@@ -345,6 +366,48 @@ final _bridgeScripts = UnmodifiableListView<UserScript>([
   window.__fastenStitchFlutterBridgeInstalled = true;
 
   var pendingMessages = [];
+  var focusScrollTimer;
+
+  function keepFocusedControlVisible() {
+    if (focusScrollTimer) {
+      window.clearTimeout(focusScrollTimer);
+    }
+
+    focusScrollTimer = window.setTimeout(function () {
+      var activeElement = document.activeElement;
+      if (!activeElement) {
+        return;
+      }
+
+      var tagName = activeElement.tagName;
+      var isFormControl =
+        tagName === 'INPUT' ||
+        tagName === 'TEXTAREA' ||
+        tagName === 'SELECT' ||
+        activeElement.isContentEditable;
+      if (!isFormControl) {
+        return;
+      }
+
+      try {
+        activeElement.scrollIntoView({
+          block: 'center',
+          inline: 'nearest'
+        });
+      } catch (_) {
+        activeElement.scrollIntoView(false);
+      }
+    }, 50);
+  }
+
+  document.addEventListener('focusin', keepFocusedControlVisible);
+  window.addEventListener('resize', keepFocusedControlVisible);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener(
+      'resize',
+      keepFocusedControlVisible
+    );
+  }
 
   function normalizeMessage(message) {
     return typeof message === 'string' ? message : JSON.stringify(message);
