@@ -1,4 +1,4 @@
-## Unreleased
+## 1.0.1
 
 - Resize the primary WebView around the soft keyboard and scroll focused HTML
   controls into view when the visible viewport changes.
