@@ -72,6 +72,10 @@ class _FastenStitchElementState extends State<FastenStitchElement> {
         initialSettings: _createWebViewSettings(widget.debugModeEnabled),
         initialUserScripts: _bridgeScripts,
         onWebViewCreated: _registerJavaScriptBridge,
+        onPermissionRequest: (_, request) => _handlePermissionRequest(
+          request,
+          enabled: widget.tefcaMode == true,
+        ),
         onCreateWindow: (controller, createWindowAction) async {
           unawaited(
             _openModal(
@@ -200,6 +204,7 @@ class _FastenStitchElementState extends State<FastenStitchElement> {
               windowId: windowId,
               initialUrl: url,
               debugModeEnabled: widget.debugModeEnabled,
+              tefcaMode: widget.tefcaMode == true,
               closeButtonBuilder: widget.closeButtonBuilder,
               onDismiss: () {
                 Navigator.of(dialogContext).maybePop();
@@ -248,6 +253,7 @@ class _KeyboardAvoidingViewport extends StatelessWidget {
 class _FastenStitchModalWebView extends StatelessWidget {
   const _FastenStitchModalWebView({
     required this.debugModeEnabled,
+    required this.tefcaMode,
     required this.onDismiss,
     required this.onBridgeMessage,
     this.windowId,
@@ -258,6 +264,7 @@ class _FastenStitchModalWebView extends StatelessWidget {
   final int? windowId;
   final String? initialUrl;
   final bool debugModeEnabled;
+  final bool tefcaMode;
   final VoidCallback onDismiss;
   final ValueChanged<Object?> onBridgeMessage;
   final FastenStitchCloseButtonBuilder? closeButtonBuilder;
@@ -276,6 +283,10 @@ class _FastenStitchModalWebView extends StatelessWidget {
                   : null,
               initialSettings: _createWebViewSettings(debugModeEnabled),
               initialUserScripts: _bridgeScripts,
+              onPermissionRequest: (_, request) => _handlePermissionRequest(
+                request,
+                enabled: tefcaMode,
+              ),
               onWebViewCreated: (controller) {
                 controller.addJavaScriptHandler(
                   handlerName: _javascriptMessageHandlerName,
@@ -336,6 +347,27 @@ bool _isFastenCallbackUrl(String url) {
       url.contains(
         'fastenhealth.com/v1/bridge/identity_verification/callback',
       );
+}
+
+Future<PermissionResponse> _handlePermissionRequest(
+  PermissionRequest request, {
+  required bool enabled,
+}) async {
+  final supportedMediaResources = {
+    PermissionResourceType.CAMERA,
+    PermissionResourceType.MICROPHONE,
+    PermissionResourceType.CAMERA_AND_MICROPHONE,
+  };
+  final canGrant = enabled &&
+      request.resources.isNotEmpty &&
+      request.resources.every(supportedMediaResources.contains);
+
+  return PermissionResponse(
+    resources: request.resources,
+    action: canGrant
+        ? PermissionResponseAction.GRANT
+        : PermissionResponseAction.DENY,
+  );
 }
 
 InAppWebViewSettings _createWebViewSettings(bool debugModeEnabled) {

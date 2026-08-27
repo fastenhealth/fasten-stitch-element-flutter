@@ -20,6 +20,45 @@ flutter pub add fasten_stitch_element_flutter
 
 This SDK uses `flutter_inappwebview` for native WebView and popup handling. Follow that package's platform setup notes if your app has not used it before, especially for iOS, Android, macOS, Windows, or web-specific configuration.
 
+### iOS camera and microphone access
+
+In TEFCA mode, the SDK grants camera and microphone requests made by the web
+content. A consuming iOS app that enables TEFCA mode must also describe why it
+needs those permissions. Add the following entries to `ios/Runner/Info.plist`,
+adjusting the messages to match your app's use case:
+
+```xml
+<key>NSCameraUsageDescription</key>
+<string>We use your camera to complete identity verification.</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>We use your microphone during video verification.</string>
+```
+
+The microphone entry is required when a workflow requests audio in addition to
+video. iOS displays these messages in its system permission prompts. Camera and
+microphone access must be tested on a physical device and can be changed later
+under the app's permissions in iOS Settings.
+
+### Android camera and microphone access
+
+A consuming Android app that enables TEFCA mode must declare camera and
+microphone permissions in `android/app/src/main/AndroidManifest.xml`:
+
+```xml
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+```
+
+On Android 6.0 (API level 23) and later, the app must also request these
+permissions at runtime before starting a TEFCA workflow that uses the camera.
+Do not request them for non-TEFCA workflows. Use your app's existing
+permission-handling mechanism, or a package such as `permission_handler`, to
+check and request the permissions after the user initiates the TEFCA workflow.
+
+`RECORD_AUDIO` is only required when the workflow requests microphone access.
+The SDK handles the WebView-level camera and microphone request, but it cannot
+grant Android application permissions on behalf of the consuming app.
+
 ## Usage
 
 ```dart
@@ -87,4 +126,3 @@ flutter test
 ## Feedback
 
 Please open an issue with any bugs or requests. Your feedback will help stabilize the public SDK interface.
-
