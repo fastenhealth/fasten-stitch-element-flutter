@@ -4,6 +4,7 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
+import 'callback_url.dart';
 import 'fasten_stitch_message.dart';
 import 'query_params.dart';
 
@@ -203,6 +204,7 @@ class _FastenStitchElementState extends State<FastenStitchElement> {
             child: _FastenStitchModalWebView(
               windowId: windowId,
               initialUrl: url,
+              expectedApiOrigin: inferFastenApiOrigin(widget.embedBaseUrl),
               debugModeEnabled: widget.debugModeEnabled,
               tefcaMode: widget.tefcaMode == true,
               closeButtonBuilder: widget.closeButtonBuilder,
@@ -254,6 +256,7 @@ class _FastenStitchModalWebView extends StatelessWidget {
   const _FastenStitchModalWebView({
     required this.debugModeEnabled,
     required this.tefcaMode,
+    required this.expectedApiOrigin,
     required this.onDismiss,
     required this.onBridgeMessage,
     this.windowId,
@@ -265,6 +268,7 @@ class _FastenStitchModalWebView extends StatelessWidget {
   final String? initialUrl;
   final bool debugModeEnabled;
   final bool tefcaMode;
+  final Uri? expectedApiOrigin;
   final VoidCallback onDismiss;
   final ValueChanged<Object?> onBridgeMessage;
   final FastenStitchCloseButtonBuilder? closeButtonBuilder;
@@ -299,7 +303,11 @@ class _FastenStitchModalWebView extends StatelessWidget {
                 );
               },
               onLoadStop: (controller, url) {
-                if (url != null && _isFastenCallbackUrl(url.toString())) {
+                if (url != null &&
+                    isFastenCallbackUrl(
+                      url.toString(),
+                      expectedApiOrigin,
+                    )) {
                   onDismiss();
                 }
               },
@@ -340,13 +348,6 @@ class _FastenStitchModalWebView extends StatelessWidget {
       ),
     );
   }
-}
-
-bool _isFastenCallbackUrl(String url) {
-  return url.contains('fastenhealth.com/v1/bridge/callback') ||
-      url.contains(
-        'fastenhealth.com/v1/bridge/identity_verification/callback',
-      );
 }
 
 Future<PermissionResponse> _handlePermissionRequest(
