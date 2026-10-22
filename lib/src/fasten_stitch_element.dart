@@ -64,6 +64,8 @@ class FastenStitchElement extends StatefulWidget {
 
 class _FastenStitchElementState extends State<FastenStitchElement> {
   var _modalVisible = false;
+  InAppWebViewController? _modalController;
+  String? _pendingModalUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +192,12 @@ class _FastenStitchElementState extends State<FastenStitchElement> {
   }
 
   Future<void> _openModal({int? windowId, String? url}) async {
-    if (!mounted || _modalVisible) {
+    if (!mounted) {
+      return;
+    }
+
+    if (_modalVisible) {
+      await _navigateOpenModal(url);
       return;
     }
 
@@ -208,6 +215,15 @@ class _FastenStitchElementState extends State<FastenStitchElement> {
               debugModeEnabled: widget.debugModeEnabled,
               tefcaMode: widget.tefcaMode == true,
               closeButtonBuilder: widget.closeButtonBuilder,
+              onControllerReady: (controller) {
+                _modalController = controller;
+                final pending = _pendingModalUrl;
+                if (pending == null || pending.isEmpty) {
+                  return;
+                }
+                _pendingModalUrl = null;
+                unawaited(_loadModalUrl(controller, pending));
+              },
               onDismiss: () {
                 Navigator.of(dialogContext).maybePop();
               },
@@ -222,7 +238,54 @@ class _FastenStitchElementState extends State<FastenStitchElement> {
         },
       );
     } finally {
+      _modalController = null;
+      _pendingModalUrl = null;
       _modalVisible = false;
+    }
+  }
+
+  /// A portal may open the next page with a second window.open while the
+  /// sign-in popup is already visible. Load that URL here instead of
+  /// dropping it. about:blank is the placeholder some portals open before
+  /// assigning location.href, so it must not replace a page that is already
+  /// showing.
+  Future<void> _navigateOpenModal(String? url) async {
+    if (url == null || url.isEmpty || _isBlankPopup(url)) {
+      debugPrint(
+        '[FastenStitchElement] ignored empty popup while a modal is open',
+      );
+      return;
+    }
+    final controller = _modalController;
+    if (controller == null) {
+      _pendingModalUrl = url;
+      debugPrint(
+        '[FastenStitchElement] queued popup until the modal web view is '
+        'ready',
+      );
+      return;
+    }
+    await _loadModalUrl(controller, url);
+  }
+
+  Future<void> _loadModalUrl(
+    InAppWebViewController controller,
+    String url,
+  ) async {
+    final host = Uri.tryParse(url)?.host;
+    debugPrint(
+      '[FastenStitchElement] loading popup page in the open modal'
+      '${host == null || host.isEmpty ? '' : ' ($host)'}',
+    );
+    try {
+      await controller.loadUrl(
+        urlRequest: URLRequest(url: WebUri(url)),
+      );
+    } catch (error) {
+      debugPrint(
+        '[FastenStitchElement] failed to load popup page in the open modal: '
+        '$error',
+      );
     }
   }
 
@@ -259,6 +322,7 @@ class _FastenStitchModalWebView extends StatelessWidget {
     required this.expectedApiOrigin,
     required this.onDismiss,
     required this.onBridgeMessage,
+    required this.onControllerReady,
     this.windowId,
     this.initialUrl,
     this.closeButtonBuilder,
@@ -271,6 +335,7 @@ class _FastenStitchModalWebView extends StatelessWidget {
   final Uri? expectedApiOrigin;
   final VoidCallback onDismiss;
   final ValueChanged<Object?> onBridgeMessage;
+  final ValueChanged<InAppWebViewController> onControllerReady;
   final FastenStitchCloseButtonBuilder? closeButtonBuilder;
 
   @override
@@ -292,6 +357,7 @@ class _FastenStitchModalWebView extends StatelessWidget {
                 enabled: tefcaMode,
               ),
               onWebViewCreated: (controller) {
+                onControllerReady(controller);
                 controller.addJavaScriptHandler(
                   handlerName: _javascriptMessageHandlerName,
                   callback: (arguments) {
@@ -348,6 +414,14 @@ class _FastenStitchModalWebView extends StatelessWidget {
       ),
     );
   }
+}
+
+bool _isBlankPopup(String url) {
+  final parsed = Uri.tryParse(url);
+  if (parsed == null) {
+    return false;
+  }
+  return parsed.scheme == 'about';
 }
 
 Future<PermissionResponse> _handlePermissionRequest(
@@ -485,15 +559,55 @@ final _bridgeScripts = UnmodifiableListView<UserScript>([
     postMessage: sendToFlutter
   };
 
-  var originalOpen = window.open;
-  window.open = function (url, target, features) {
-    if (url) {
+  function resolvePopupUrl(url) {
+    try {
+      return new URL(String(url), window.location.href).href;
+    } catch (e) {
+      return String(url);
+    }
+  }
+
+  // A real browser window is truthy and accepts location.href. Returning
+  // null makes portals such as AdvancedMD treat the popup as blocked, so
+  // sign-in stays on the spinner. The stub is not a real window. Flutter
+  // loads each URL in the single modal.
+  function openPopup(url) {
+    var resolved = resolvePopupUrl(url);
+    var current = resolved;
+    function publish(next) {
       sendToFlutter({
         action: 'FASTEN_CONNECT_WINDOW_OPEN_REQUEST',
         to: 'FASTEN_CONNECT_FLUTTER_WEBVIEW',
-        targetUrl: String(url)
+        targetUrl: next
       });
-      return null;
+    }
+    publish(current);
+    var stub = {
+      closed: false,
+      focus: function () {},
+      close: function () { stub.closed = true; },
+      postMessage: function () {}
+    };
+    stub.location = {};
+    Object.defineProperty(stub.location, 'href', {
+      configurable: true,
+      enumerable: true,
+      get: function () { return current; },
+      set: function (next) {
+        current = resolvePopupUrl(next);
+        publish(current);
+      }
+    });
+    return stub;
+  }
+
+  var originalOpen = window.open;
+  window.open = function (url, target, features) {
+    var hasUrl = url !== undefined &&
+      url !== null &&
+      String(url).length > 0;
+    if (hasUrl || target || features) {
+      return openPopup(hasUrl ? url : 'about:blank');
     }
 
     if (originalOpen) {
