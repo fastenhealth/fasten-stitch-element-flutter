@@ -103,15 +103,6 @@ The widget accepts the same Stitch.js-oriented configuration as the React Native
 - `onEventBus` - Callback invoked with parsed payloads sent from Fasten Connect.
 - `staticBackdrop` - When true, disables outside-tap dismissal of the modal WebView.
 
-The following optional branding inputs are passed to the embed URL as query parameters. Omit them or pass an empty string to leave the parameter unset.
-
-| Widget input | Query parameter | Example value |
-| --- | --- | --- |
-| `brandingTheme` | `branding-theme` | `dark` |
-| `brandingAccentColor` | `branding-accent-color` | `#E04E3C` |
-| `brandingCompanyName` | `branding-company-name` | `your brand` |
-| `brandingLogoUrl` | `branding-logo-url` | `https://your-brand.com/assets/logo.svg` |
-
 ## How It Works
 
 The Stitch.js browser workflow opens a popup for patient portal login and consent. Mobile WebViews do not handle browser popups the same way as a full browser, so this SDK uses:

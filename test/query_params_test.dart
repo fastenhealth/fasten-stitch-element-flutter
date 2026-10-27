@@ -15,50 +15,6 @@ void main() {
     expect(params['sdk-mode'], 'flutter');
   });
 
-  test('encodes branding options with URL-safe values', () {
-    final query = encodeFastenStitchElementOptionsAsQueryString(
-      const FastenStitchElementQueryOptions(
-        publicId: 'public_test_123',
-        brandingTheme: 'dark',
-        brandingAccentColor: '#E04E3C',
-        brandingCompanyName: 'your brand',
-        brandingLogoUrl: 'https://your-brand.com/assets/logo.svg',
-      ),
-    );
-    final url = Uri.parse('https://embed.connect.fastenhealth.com/?$query');
-    final params = url.queryParameters;
-
-    expect(params['branding-theme'], 'dark');
-    expect(params['branding-accent-color'], '#E04E3C');
-    expect(params['branding-company-name'], 'your brand');
-    expect(
-      params['branding-logo-url'],
-      'https://your-brand.com/assets/logo.svg',
-    );
-    expect(url.hasFragment, isFalse);
-  });
-
-  test('omits unset and empty branding options', () {
-    for (final options in const [
-      FastenStitchElementQueryOptions(publicId: 'public_test_123'),
-      FastenStitchElementQueryOptions(
-        publicId: 'public_test_123',
-        brandingTheme: '',
-        brandingAccentColor: '',
-        brandingCompanyName: '',
-        brandingLogoUrl: '',
-      ),
-    ]) {
-      final query = encodeFastenStitchElementOptionsAsQueryString(options);
-      final params = Uri.splitQueryString(query);
-
-      expect(params.containsKey('branding-theme'), isFalse);
-      expect(params.containsKey('branding-accent-color'), isFalse);
-      expect(params.containsKey('branding-company-name'), isFalse);
-      expect(params.containsKey('branding-logo-url'), isFalse);
-    }
-  });
-
   test('encodes search-only options like the React Native SDK', () {
     final query = encodeFastenStitchElementOptionsAsQueryString(
       const FastenStitchElementQueryOptions(

@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       bump:
-        description: "Version bump type (ignored when an exact version is provided)"
+        description: "Version bump type"
         required: true
         default: patch
         type: choice
@@ -19,10 +19,6 @@ on:
           - patch
           - minor
           - major
-      version:
-        description: "Exact version without build metadata (e.g. 1.2.3 or 1.2.3-beta.1)"
-        required: false
-        type: string
 
 permissions:
   id-token: write # Required for OIDC authentication
@@ -59,28 +55,10 @@ jobs:
       - name: Run Dart Analyzer
         run: flutter analyze
 
-      - name: Set version
+      - name: Bump version
         id: bump
-        env:
-          BUMP_TYPE: ${{ inputs.bump }}
-          EXACT_VERSION: ${{ inputs.version }}
         run: |
-          version="$BUMP_TYPE"
-          if [[ -n "$EXACT_VERSION" ]]; then
-            numeric='(0|[1-9][0-9]*)'
-            prerelease_identifier="($numeric|[0-9]*[A-Za-z-][0-9A-Za-z-]*)"
-            semver="^$numeric\.$numeric\.$numeric(-$prerelease_identifier(\.$prerelease_identifier)*)?$"
-            if [[ ! "$EXACT_VERSION" =~ $semver ]]; then
-              echo "::error::Exact version must be a semantic version without build metadata, such as 1.2.3 or 1.2.3-beta.1"
-              exit 1
-            fi
-            version="$EXACT_VERSION"
-          fi
-          if [[ -n "$EXACT_VERSION" ]]; then
-            sed -i "s/^version: .*/version: $version/" pubspec.yaml
-          else
-            dart pub bump "$version"
-          fi
+          dart pub bump "${{ inputs.bump }}"
           echo "version=$(awk '/^version:/ {print $2}' pubspec.yaml)" >> "$GITHUB_OUTPUT"
           echo "tag=v$(awk '/^version:/ {print $2}' pubspec.yaml)" >> "$GITHUB_OUTPUT"
       - name: Commit version bump
