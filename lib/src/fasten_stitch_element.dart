@@ -23,6 +23,10 @@ class FastenStitchElement extends StatefulWidget {
     this.staticBackdrop = false,
     this.reconnectOrgConnectionId,
     this.brandId,
+    this.brandingTheme,
+    this.brandingAccentColor,
+    this.brandingCompanyName,
+    this.brandingLogoUrl,
     this.portalId,
     this.endpointId,
     this.searchQuery,
@@ -44,6 +48,10 @@ class FastenStitchElement extends StatefulWidget {
   final bool staticBackdrop;
   final String? reconnectOrgConnectionId;
   final String? brandId;
+  final String? brandingTheme;
+  final String? brandingAccentColor;
+  final String? brandingCompanyName;
+  final String? brandingLogoUrl;
   final String? portalId;
   final String? endpointId;
   final String? searchQuery;
@@ -109,6 +117,10 @@ class _FastenStitchElementState extends State<FastenStitchElement> {
         staticBackdrop: widget.staticBackdrop,
         reconnectOrgConnectionId: widget.reconnectOrgConnectionId,
         brandId: widget.brandId,
+        brandingTheme: widget.brandingTheme,
+        brandingAccentColor: widget.brandingAccentColor,
+        brandingCompanyName: widget.brandingCompanyName,
+        brandingLogoUrl: widget.brandingLogoUrl,
         portalId: widget.portalId,
         endpointId: widget.endpointId,
         searchQuery: widget.searchQuery,
