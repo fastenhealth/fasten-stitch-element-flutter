@@ -7,6 +7,10 @@ class FastenStitchElementQueryOptions {
     this.staticBackdrop,
     this.reconnectOrgConnectionId,
     this.brandId,
+    this.brandingTheme,
+    this.brandingAccentColor,
+    this.brandingCompanyName,
+    this.brandingLogoUrl,
     this.portalId,
     this.endpointId,
     this.searchQuery,
@@ -25,6 +29,10 @@ class FastenStitchElementQueryOptions {
   final bool? staticBackdrop;
   final String? reconnectOrgConnectionId;
   final String? brandId;
+  final String? brandingTheme;
+  final String? brandingAccentColor;
+  final String? brandingCompanyName;
+  final String? brandingLogoUrl;
   final String? portalId;
   final String? endpointId;
   final String? searchQuery;
@@ -78,6 +86,10 @@ String encodeFastenStitchElementOptionsAsQueryString(
   }
 
   addString('brand-id', options.brandId);
+  addString('branding-theme', options.brandingTheme);
+  addString('branding-accent-color', options.brandingAccentColor);
+  addString('branding-company-name', options.brandingCompanyName);
+  addString('branding-logo-url', options.brandingLogoUrl);
   addString('portal-id', options.portalId);
   addString('endpoint-id', options.endpointId);
 
