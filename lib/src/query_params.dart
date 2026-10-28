@@ -86,10 +86,10 @@ String encodeFastenStitchElementOptionsAsQueryString(
   }
 
   addString('brand-id', options.brandId);
-  addString('branding-theme', options.brandingTheme);
-  addString('branding-accent-color', options.brandingAccentColor);
-  addString('branding-company-name', options.brandingCompanyName);
-  addString('branding-logo-url', options.brandingLogoUrl);
+  addString('theme', options.brandingTheme);
+  addString('accent-color', options.brandingAccentColor);
+  addString('company-name', options.brandingCompanyName);
+  addString('logo-url', options.brandingLogoUrl);
   addString('portal-id', options.portalId);
   addString('endpoint-id', options.endpointId);
 
