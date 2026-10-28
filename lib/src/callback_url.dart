@@ -18,11 +18,11 @@ Uri? inferFastenApiOrigin(String embedBaseUrl) {
 
   final hostParts = embedUri.host.split('.');
   hostParts[0] = 'api';
-  return embedUri.replace(
+  return Uri(
+    scheme: embedUri.scheme,
     host: hostParts.join('.'),
+    port: embedUri.port,
     path: '/',
-    query: null,
-    fragment: null,
   );
 }
 
