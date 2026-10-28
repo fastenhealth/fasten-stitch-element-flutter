@@ -28,11 +28,11 @@ void main() {
     final url = Uri.parse('https://embed.connect.fastenhealth.com/?$query');
     final params = url.queryParameters;
 
-    expect(params['branding-theme'], 'dark');
-    expect(params['branding-accent-color'], '#E04E3C');
-    expect(params['branding-company-name'], 'your brand');
+    expect(params['theme'], 'dark');
+    expect(params['accent-color'], '#E04E3C');
+    expect(params['company-name'], 'your brand');
     expect(
-      params['branding-logo-url'],
+      params['logo-url'],
       'https://your-brand.com/assets/logo.svg',
     );
     expect(url.hasFragment, isFalse);
@@ -52,10 +52,10 @@ void main() {
       final query = encodeFastenStitchElementOptionsAsQueryString(options);
       final params = Uri.splitQueryString(query);
 
-      expect(params.containsKey('branding-theme'), isFalse);
-      expect(params.containsKey('branding-accent-color'), isFalse);
-      expect(params.containsKey('branding-company-name'), isFalse);
-      expect(params.containsKey('branding-logo-url'), isFalse);
+      expect(params.containsKey('theme'), isFalse);
+      expect(params.containsKey('accent-color'), isFalse);
+      expect(params.containsKey('company-name'), isFalse);
+      expect(params.containsKey('logo-url'), isFalse);
     }
   });
 
